@@ -1,0 +1,91 @@
+version: "3.4"
+
+services:
+  emqx:
+    image: emqx/emqx:5.3.2
+    container_name: emqx
+    ports:
+      - "1883:1883" # MQTT port
+      - "8083:8083" # MQTT over WebSocket port
+      - "8084:8084" # MQTT over WebSocket with SSL port
+      - "8883:8883" # MQTT SSL port
+      - "18083:18083"
+    networks:
+      - iot
+
+  manager:
+    image: emqx/ekuiper-manager:1.8
+    container_name: ekuiper-manager
+    ports:
+      - "9082:9082"
+    restart: unless-stopped
+    environment:
+      DEFAULT_EKUIPER_ENDPOINT: "http://ekuiper:9081"
+    networks:
+      - iot
+
+  ekuiper:
+    image: lfedge/ekuiper:1.13.3
+    ports:
+      - "9081:9081"
+      - "20498:20498"
+    container_name: ekuiper
+    hostname: ekuiper
+    restart: unless-stopped
+    user: root
+    volumes:
+      - /tmp/data:/kuiper/data
+      - /tmp/log:/kuiper/log
+    environment:
+      MQTT_SOURCE__DEFAULT__SERVER: "tcp://192.168.99.100:1883"
+      KUIPER__BASIC__CONSOLELOG: "true"
+      KUIPER__BASIC__IGNORECASE: "false"
+    networks:
+      - iot
+
+  sensor_dummy:
+    build:
+      context: .
+      dockerfile: C:\Users\Stefan\Desktop\Faks\MMS\Projekat 2 backup\Senzor\Dockerfile
+    depends_on:
+      - emqx
+    networks:
+      - iot
+
+  nats:
+    image: nats:alpine
+    container_name: nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    networks:
+      - iot
+
+  influxdb:
+    image: influxdb:latest
+    networks:
+      - default
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./influxdb-storage:/var/lib/influxdb
+    healthcheck:
+      test: "curl -f http://localhost:8086/ping"
+      interval: 5s
+      timeout: 10s
+      retries: 5
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana-provisioning/:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+
+networks:
+  iot:
+    driver: bridge
+
+volumes:
+  mysql-data:

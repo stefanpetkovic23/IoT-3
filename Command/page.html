@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Event Display</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 10px;
+        background-color: #f0f0f8;
+        color: #333;
+      }
+      .container {
+        width: calc(100% - 20px);
+        margin: 0 auto;
+        background: #fff;
+        padding: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        table-layout: fixed;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+        white-space: nowrap;
+        font-size: 0.8em; /* Smanjenje veličine slova */
+        border-radius: 4px; /* Zaobljene ivice */
+      }
+      th {
+        background-color: #f4f4f4;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+      }
+      tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+      tbody tr:hover {
+        background-color: #f1f1f1;
+      }
+      .square {
+        width: 20px;
+        height: 20px;
+        border: 1px solid #ccc;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Event Display</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>City</th>
+            <th>Country</th>
+            <th>SmartCity Index</th>
+            <th>SmartCity Index relative Edmonton</th>
+            <th>Smart Economy</th>
+            <th>Smart Environment</th>
+            <th>Smart Government</th>
+            <th>Smart Living</th>
+            <th>Smart Mobility</th>
+            <th>Smart People</th>
+            <th>Indicator</th>
+          </tr>
+        </thead>
+        <tbody id="event-table-body">
+          <!-- Redovi sa podacima će biti dodati ovde -->
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      const socket = new WebSocket("ws://localhost:3000");
+
+      socket.onopen = function () {
+        console.log("WebSocket connection established.");
+      };
+
+      socket.onerror = function (error) {
+        console.error("WebSocket error:", error);
+      };
+
+      socket.onmessage = function (event) {
+        const eventData = JSON.parse(event.data);
+        console.log("Received data:", eventData);
+
+        const tableBody = document.getElementById("event-table-body");
+
+        const row = document.createElement("tr");
+
+        // Kreiranje ćelija i dodavanje podataka u red
+        row.innerHTML = `
+        <td>${eventData.City}</td>
+        <td>${eventData.Country}</td>
+        <td>${eventData.SmartCity_Index}</td>
+        <td>${eventData.SmartCity_Index_relative_Edmonton}</td>
+        <td>${eventData.Smart_Economy}</td>
+        <td>${eventData.Smart_Environment}</td>
+        <td>${eventData.Smart_Government}</td>
+        <td>${eventData.Smart_Living}</td>
+        <td style="background-color: ${getColorForValue(
+          eventData.Smart_Mobility
+        )};">${eventData.Smart_Mobility}</td>
+        <td>${eventData.Smart_People}</td>
+        <td><div class="square" style="background-color: ${getColorForValue(
+          eventData.Smart_Mobility
+        )};"></div></td>
+      `;
+
+        tableBody.prepend(row); // Dodajemo novi red na početak tabele
+      };
+
+      function getColorForValue(value) {
+        if (value >= 4500 && value < 5200) {
+          return "red"; // Crvena boja za vrednosti između 5000 i 5500
+        } else if (value >= 5200 && value < 5800) {
+          return "yellow"; // Žuta boja za vrednosti između 5500 i 6500
+        } else if (value >= 5800) {
+          return "green"; // Zelena boja za vrednosti 6500 i više
+        } else {
+          return "gray"; // Default boja za sve ostale vrednosti
+        }
+      }
+    </script>
+  </body>
+</html>
